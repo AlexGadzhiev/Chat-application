@@ -14,7 +14,6 @@ import java.util.List;
 public class HtmlController {
     private HashMap<String, List<String>> mp = new HashMap<>();
     private String lastUser;
-    private boolean ok = true;
 
     private String makeString(int a, int b, int total, String op) {
         return a + " " + op + " " + b + " = " + total;
@@ -61,10 +60,10 @@ public class HtmlController {
     @GetMapping(value = "/login")
     @ResponseBody
     public ResponseEntity<?> login(@RequestParam("name") String name) {
-        if(lastUser != null){
-
+        if(lastUser == null){
+            lastUser = name;
         }
-        return ResponseEntity.ok().body(null);
+        return ResponseEntity.ok().body("Try again");
     }
 
     @GetMapping(value = "/logout")
@@ -73,8 +72,10 @@ public class HtmlController {
         // спроси Магу про удалении истории при logout
         if(!name.equals(lastUser))
             return ResponseEntity.ok().body("Try again");
-        else
+        else {
+            mp.get(lastUser).clear();
             lastUser = null;
+        }
         return ResponseEntity.ok().body(null);
     }
 }
