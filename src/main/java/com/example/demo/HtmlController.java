@@ -1,10 +1,7 @@
 package com.example.demo;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,8 +11,8 @@ import java.util.List;
 
 @RestController
 public class HtmlController {
-    private HashMap<String, List<String>> mp = new HashMap<>();
-    private HashSet<String> set = new HashSet<>();
+    private HashMap<String, List<String>> histories = new HashMap<>();
+    private HashMap<String, Integer> accounts = new HashMap<>();
     private String lastUser;
 
     private String makeString(int a, int b, int total, String op) {
@@ -30,19 +27,19 @@ public class HtmlController {
         switch (action) {
             case "plus":
                 if (lastUser != null)
-                    mp.get(lastUser).add(makeString(a, b, a + b, "+"));
+                    histories.get(lastUser).add(makeString(a, b, a + b, "+"));
                 return ResponseEntity.ok().body(obj.plus());
             case "minus":
                 if (lastUser != null)
-                    mp.get(lastUser).add(makeString(a, b, a - b, "-"));
+                    histories.get(lastUser).add(makeString(a, b, a - b, "-"));
                 return ResponseEntity.ok().body(obj.minus());
             case "div":
                 if (lastUser != null)
-                    mp.get(lastUser).add(makeString(a, b, a / b, "/"));
+                    histories.get(lastUser).add(makeString(a, b, a / b, "/"));
                 return ResponseEntity.ok().body(obj.div());
             case "times":
                 if (lastUser != null)
-                    mp.get(lastUser).add(makeString(a, b, a * b, "*"));
+                    histories.get(lastUser).add(makeString(a, b, a * b, "*"));
                 return ResponseEntity.ok().body(obj.times());
         }
         return ResponseEntity.ok().body(null);
@@ -53,22 +50,24 @@ public class HtmlController {
     public ResponseEntity<?> getHistory() {
         if (lastUser != null) {
             return ResponseEntity.ok().body("Username's name is: " + lastUser + '\n' +
-                    "Username's history of operations: " + mp.get(lastUser));
+                    "Username's history of operations: " + histories.get(lastUser));
         } else {
             return ResponseEntity.ok().body("Sorry, don't have one");
         }
     }
 
-    @GetMapping(value = "/login")
+    @PostMapping(value = "/login")
     @ResponseBody
-    public ResponseEntity<?> login(@RequestParam("name") String name) {
-        if(!set.contains(name)){
+    public ResponseEntity<?> login(@RequestBody User user) {
+        if(!accounts.containsKey(user.getUsername())){
             return ResponseEntity.ok().body("You have to sign up!");
+        } else if(lastUser == null && accounts.get(user.getUsername()) != user.getPassword()){
+            return ResponseEntity.ok().body("Wrong password");
         } else if(lastUser == null){
-            lastUser = name;
-            mp.put(name, new ArrayList<>());
+            lastUser = user.getUsername();
+            histories.put(user.getUsername(), new ArrayList<>());
             return ResponseEntity.ok().body("You have successfully logged in");
-        } else if(lastUser.equals(name)){
+        } else if(lastUser.equals(user.getUsername())){
             return ResponseEntity.ok().body("You're already logged in!");
         }
         return ResponseEntity.ok().body("Try again");
@@ -80,19 +79,19 @@ public class HtmlController {
         if(!name.equals(lastUser))
             return ResponseEntity.ok().body("Try again");
         else {
-            mp.get(lastUser).clear();
+            histories.get(lastUser).clear();
             lastUser = null;
             return ResponseEntity.ok().body("You have successfully logged out");
         }
     }
 
-    @GetMapping(value = "/signup")
+    @PostMapping(value = "/signup")
     @ResponseBody
-    public ResponseEntity<?> signup(@RequestParam("name") String name){
-        if(set.contains(name)){
+    public ResponseEntity<?> signup(@RequestBody User user){
+        if(accounts.containsKey(user.getUsername())){
             return ResponseEntity.ok().body("You're already signed up!");
         }
-        set.add(name);
+        accounts.put(user.getUsername(), user.getPassword());
         return ResponseEntity.ok().body("You have successfully signed up");
     }
 }
