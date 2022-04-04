@@ -1,6 +1,9 @@
 package com.example.demo;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -11,8 +14,10 @@ import java.util.List;
 
 @RestController
 public class HtmlController {
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
     private HashMap<String, List<String>> histories = new HashMap<>();
-    private HashMap<String, Integer> accounts = new HashMap<>();
+    private HashMap<String, String> accounts = new HashMap<>();
     private String lastUser;
 
     private String makeString(int a, int b, int total, String op) {
@@ -93,5 +98,12 @@ public class HtmlController {
         }
         accounts.put(user.getUsername(), user.getPassword());
         return ResponseEntity.ok().body("You have successfully signed up");
+    }
+
+    @GetMapping(value = "/run")
+    @ResponseBody
+    public ResponseEntity<?> run(){
+        List<User> userList = jdbcTemplate.query("SELECT * from accounts", BeanPropertyRowMapper.newInstance(User.class));
+        return ResponseEntity.ok().body(null);
     }
 }
