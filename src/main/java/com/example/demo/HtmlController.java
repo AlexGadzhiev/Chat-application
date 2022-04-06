@@ -1,63 +1,26 @@
 package com.example.demo;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 @RestController
 public class HtmlController {
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private AccountsDaoInterface obj;
     private String lastUser;
     private String current_history;
-
-    private String makeString(int a, int b, int total, String op) {
-        return a + " " + op + " " + b + " = " + total;
-    }
 
     @GetMapping(value = "/calculator")
     @ResponseBody
     public ResponseEntity<?> getInfo(@RequestParam("a") Integer a, @RequestParam("b") Integer b,
                                      @RequestParam("action") String action) throws IOException {
-        List<UserHistory> histories = jdbcTemplate.query("SELECT * from histories", BeanPropertyRowMapper.newInstance(UserHistory.class));
-        for(UserHistory user : histories){
-            if(user.getUsername().equals(lastUser)){
-                current_history = user.getHistory();
-                break;
-            }
-        }
-        com.example.demo.Operation obj = new com.example.demo.Operation(a, b);
-        switch (action) {
-            case "plus":
-                if (lastUser != null)
-                    jdbcTemplate.update("UPDATE histories SET history=? WHERE username=?",
-                            current_history + makeString(a, b, a + b, "+") + ", ", lastUser);
-                return ResponseEntity.ok().body(obj.plus());
-            case "minus":
-                if (lastUser != null)
-                    jdbcTemplate.update("UPDATE histories SET history=? WHERE username=?",
-                            current_history + makeString(a, b, a - b, "-") + ", ", lastUser);
-                return ResponseEntity.ok().body(obj.minus());
-            case "div":
-                if (lastUser != null)
-                    jdbcTemplate.update("UPDATE histories SET history=? WHERE username=?",
-                            current_history + makeString(a, b, a / b, "/") + ", ", lastUser);
-                return ResponseEntity.ok().body(obj.div());
-            case "times":
-                if (lastUser != null)
-                    jdbcTemplate.update("UPDATE histories SET history=? WHERE username=?",
-                            current_history + makeString(a, b, a * b, "*") + ", ", lastUser);
-                return ResponseEntity.ok().body(obj.times());
-        }
-        return ResponseEntity.ok().body(null);
+        current_history = obj.findHistory(lastUser);
+        return ResponseEntity.ok().body(obj.update(lastUser, current_history, a, b, action));
     }
 
     @GetMapping(value = "/history")
@@ -66,13 +29,7 @@ public class HtmlController {
         if(lastUser == null){
             return ResponseEntity.ok().body("Sorry, don't have one");
         }
-        List<UserHistory> histories = jdbcTemplate.query("SELECT * from histories", BeanPropertyRowMapper.newInstance(UserHistory.class));
-        for(UserHistory user : histories){
-            if(user.getUsername().equals(lastUser)){
-                current_history = user.getHistory();
-                break;
-            }
-        }
+        current_history = obj.findHistory(lastUser);
         if(current_history.isEmpty())
             return ResponseEntity.ok().body(null);
         return ResponseEntity.ok().body(current_history.substring(0, current_history.length() - 2));
@@ -81,7 +38,7 @@ public class HtmlController {
     @PostMapping(value = "/login")
     @ResponseBody
     public ResponseEntity<?> login(@RequestBody User user) {
-        List<User> userList = jdbcTemplate.query("SELECT * from accounts", BeanPropertyRowMapper.newInstance(User.class));
+        List<User> userList = obj.selectUser();
         if (lastUser != null) {
             if (lastUser.equals(user.getUsername())) {
                 return ResponseEntity.ok().body("You're already logged in!");
@@ -90,11 +47,9 @@ public class HtmlController {
             }
             return ResponseEntity.ok().body("Try again");
         }
-        for(User curUser : userList){
-            if(curUser.getUsername().equals(user.getUsername()) && user.getPassword().equals(curUser.getPassword())){
-                lastUser = user.getUsername();
-                return ResponseEntity.ok().body("You have successfully logged in");
-            }
+        if(!userList.isEmpty() && userList.contains(user)){
+            lastUser = user.getUsername();
+            return ResponseEntity.ok().body("You have successfully logged in");
         }
         return ResponseEntity.ok().body("Wrong login or password");
     }
@@ -113,23 +68,13 @@ public class HtmlController {
     @PostMapping(value = "/signup")
     @ResponseBody
     public ResponseEntity<?> signup(@RequestBody User user) {
-        List<User> userList = jdbcTemplate.query("SELECT * from accounts", BeanPropertyRowMapper.newInstance(User.class));
-        if (userList.contains(user)) {
+        if (!obj.selectUser().isEmpty() && obj.selectUser().contains(user)) {
             return ResponseEntity.ok().body("You're already signed up!");
         }
-        jdbcTemplate.update("INSERT INTO histories (username, history) VALUES(?,?)",
-                user.getUsername(), " ");
-        jdbcTemplate.update("INSERT INTO accounts (username, password) VALUES(?,?)",
-                user.getUsername(), user.getPassword());
+        obj.insertHistory(user.getUsername());
+        obj.insertAccount(user.getUsername(), user.getPassword());
         return ResponseEntity.ok().body("You have successfully signed up!");
     }
-
-//    @GetMapping(value = "/run")
-//    @ResponseBody
-//    public ResponseEntity<?> run(){
-//        List<User> userList = jdbcTemplate.query("SELECT * from accounts", BeanPropertyRowMapper.newInstance(User.class));
-//        return ResponseEntity.ok().body(null);
-//    }
 
 //    CREATE TABLE accounts (
 //            user_id serial PRIMARY KEY,
