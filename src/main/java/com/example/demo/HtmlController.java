@@ -3,6 +3,7 @@ package com.example.demo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -11,14 +12,14 @@ import java.util.List;
 @RestController
 public class HtmlController {
     @Autowired
-    private AccountsDaoInterface obj;
+    private AccountsDao obj;
     private String lastUser;
     private String current_history;
 
     @GetMapping(value = "/calculator")
     @ResponseBody
     public ResponseEntity<?> getInfo(@RequestParam("a") Integer a, @RequestParam("b") Integer b,
-                                     @RequestParam("action") String action) throws IOException {
+                                     @RequestParam("action") String action) {
         current_history = obj.findHistory(lastUser);
         return ResponseEntity.ok().body(obj.update(lastUser, current_history, a, b, action));
     }
@@ -26,11 +27,11 @@ public class HtmlController {
     @GetMapping(value = "/history")
     @ResponseBody
     public ResponseEntity<?> getHistory() {
-        if(lastUser == null){
+        if (lastUser == null) {
             return ResponseEntity.ok().body("Sorry, don't have one");
         }
         current_history = obj.findHistory(lastUser);
-        if(current_history.isEmpty())
+        if (current_history.isEmpty())
             return ResponseEntity.ok().body(null);
         return ResponseEntity.ok().body(current_history.substring(0, current_history.length() - 2));
     }
@@ -47,7 +48,7 @@ public class HtmlController {
             }
             return ResponseEntity.ok().body("Try again");
         }
-        if(!userList.isEmpty() && userList.contains(user)){
+        if (!userList.isEmpty() && userList.contains(user)) {
             lastUser = user.getUsername();
             return ResponseEntity.ok().body("You have successfully logged in");
         }
@@ -68,7 +69,10 @@ public class HtmlController {
     @PostMapping(value = "/signup")
     @ResponseBody
     public ResponseEntity<?> signup(@RequestBody User user) {
-        if (!obj.selectUser().isEmpty() && obj.selectUser().contains(user)) {
+        if (!obj.selectUser().isEmpty()) {
+            String name = "privet";
+        }
+        if (obj.selectUser().contains(user)) {
             return ResponseEntity.ok().body("You're already signed up!");
         }
         obj.insertHistory(user.getUsername());
