@@ -69,10 +69,7 @@ public class HtmlController {
     @PostMapping(value = "/signup")
     @ResponseBody
     public ResponseEntity<?> signup(@RequestBody User user) {
-        if (!obj.selectUser().isEmpty()) {
-            String name = "privet";
-        }
-        if (obj.selectUser().contains(user)) {
+        if (!obj.selectUser().isEmpty() && obj.selectUser().contains(user)) {
             return ResponseEntity.ok().body("You're already signed up!");
         }
         obj.insertHistory(user.getUsername());
