@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.userOperations;
 
 public class Response {
     private int message;

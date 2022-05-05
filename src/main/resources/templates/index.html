@@ -1,0 +1,106 @@
+<html xmlns:th="http://www.thymeleaf.org">
+	<head>
+	    <title>Chat WebSocket</title>
+
+		<script src="js/sockjs-0.3.4.js"></script>
+		<script src="js/stomp.js"></script>
+	    <script type="text/javascript">
+
+	        var stompClient = null;
+
+	        function setConnected(connected) {
+
+	            document.getElementById('connect').disabled = connected;
+	            document.getElementById('disconnect').disabled = !connected;
+	            document.getElementById('conversationDiv').style.visibility = connected ? 'visible' : 'hidden';
+	            document.getElementById('response').innerHTML = '';
+	        }
+
+			function changeChannel() {
+				let channel = document.getElementById("numberOfChannel").value;
+				let username = document.getElementById('username').innerHTML;
+				window.location.href="http://localhost:8080/index?username=" + username + "&numberOfChannel=" + channel;
+			}
+
+	        function connect() {
+
+	            var socket = new SockJS('/chat');
+	            stompClient = Stomp.over(socket);
+
+	            stompClient.connect({}, function(frame) {
+
+	            	setConnected(true);
+	                console.log('Connected: ' + frame);
+	                stompClient.subscribe('/topic/messages', function(messageOutput) {
+
+	                    showMessageOutput(JSON.parse(messageOutput.body));
+	                });
+	            });
+	        }
+
+	        function disconnect() {
+
+	            if(stompClient != null) {
+	                stompClient.disconnect();
+	            }
+
+	            setConnected(false);
+	            console.log("Disconnected");
+	        }
+
+	        function sendMessage() {
+
+	            let text = document.getElementById('text').value;
+				let username = document.getElementById('username').innerHTML;
+				let channel = document.getElementById('givenNumberOfChannel').innerHTML;
+				stompClient.send("/app/chat/", {}, JSON.stringify({'from': username, 'text':text}));
+	        }
+
+	        function showMessageOutput(messageOutput) {
+
+	            var response = document.getElementById('response');
+	            var p = document.createElement('p');
+	            p.style.wordWrap = 'break-word';
+	            p.appendChild(document.createTextNode(messageOutput.from + ": " + messageOutput.text + " (" + messageOutput.time + ")"));
+	            response.appendChild(p);
+	        }
+
+			function logout(){
+				let xhr = new XMLHttpRequest();
+				let username = document.getElementById('username').innerHTML;
+				xhr.open("POST", "http://localhost:8080/logout", true);
+				xhr.setRequestHeader('Content-Type', 'application/json');
+				xhr.send(JSON.stringify({
+					username: username,
+					password: "",
+					is_logged: 0
+				}));
+				window.location.href = "login.html";
+			}
+
+	    </script>
+	    
+	</head>
+	
+	<body onload="disconnect()">
+		<p id = "username" th:text="${username}" />
+		<p id = "givenNumberOfChannel" th:text="${numberOfChannel}" />
+		<div>
+			<br>
+			<input type="text" id="numberOfChannel" placeholder="Number of channel"/>
+		    <div>
+				<button id="changeChannel" onclick="changeChannel();">Change Channel</button>
+		        <button id="connect" onclick="connect();">Connect</button>
+		        <button id="disconnect" disabled="disabled" onclick="disconnect();">Disconnect</button>
+				<button id="logout" onclick="logout();">Logout</button>
+		    </div>
+			</br>
+		    <div id="conversationDiv">
+		        <input type="text" id="text" placeholder="Write a message..."/>
+		        <button id="sendMessage" onclick="sendMessage();">Send</button>
+		        <p id="response"></p>
+		    </div>
+		</div>
+
+	</body>
+</html>

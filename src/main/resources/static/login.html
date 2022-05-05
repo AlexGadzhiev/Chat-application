@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        #signup {
+            margin-top: 10px;
+        }
+
+        #logout {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <label for="username">Username: </label>
+    <input type="text" id="username"><br><br>
+    <label for="password">Password: </label>
+    <input type="text" id="password"><br><br>
+    <form action="../templates/index.html" id="login">
+        <button type="button" onclick="login()">Login</button>
+    </form>
+    <form action="signup.html">
+        <button id="signup">Switch to signup screen</button>
+    </form>
+    <script>
+        function login() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+            let xhr = new XMLHttpRequest();
+            xhr.responseType = 'text';
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    alert(xhr.responseText);
+                    if(xhr.responseText === "You successfully logged in!") {
+                        console.log("In");
+                        window.location.href = "http://localhost:8080/index?username=" + username + "&numberOfChannel=" + 0;
+                        alert("You successfully logged in");
+                    }
+                }
+            }
+            xhr.open("POST", "http://localhost:8080/login", true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                username: username,
+                password: password,
+                is_logged: 0
+            }));
+
+        }
+    </script>
+</body>
+</html>

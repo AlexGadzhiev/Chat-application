@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Signup</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        #switchToLogin{
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <label>Username: </label>
+    <input type="text" id="username"><br><br>
+    <label>Password: </label>
+    <input type="text" id="password"><br><br>
+    <button type="button" onclick="signup()" id="signUpButton">Sign up</button>
+    <script>
+        async function signup() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+            let xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    alert(xhr.responseText);
+                }
+            }
+            xhr.open("POST", "http://localhost:8080/signup", true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                username: username,
+                password: password,
+                is_logged: 0
+            }));
+        }
+    </script>
+    <form>
+        <button type="button" id="switchLogin" onclick="switchToLogin()">Switch to login screen</button>
+    </form>
+    <script>
+        async function switchToLogin(){
+            window.location.href="login.html";
+        }
+    </script>
+</body>
+</html>
